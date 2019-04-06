@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.21'
+}
+
+group 'com.dekitateserver.nekoadvertisement'
+version '1.0.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+
+    maven {
+        name = "Spigot"
+        url "https://hub.spigotmc.org/nexus/content/groups/public"
+    }
+}
+
+dependencies {
+    implementation 'org.spigotmc:spigot-api:1.13.2-R0.1-SNAPSHOT'
+    implementation 'com.dekitateserver.nekoeconomy:NekoEconomyApi:1.0.0-SNAPSHOT'
+
+    compileOnly 'com.dekitateserver.nekolib:NekoLib:1.0.0-SNAPSHOT'
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}

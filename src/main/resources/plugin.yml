@@ -1,0 +1,16 @@
+name: NekoAdvertisement
+main: com.dekitateserver.nekoadvertisement.NekoAdvertisementPlugin
+version: 1.0.0-SNAPSHOT
+author: ken_kentan
+website: https://www.dekitateserver.com
+depend: [NekoLib, NekoEconomy]
+
+api-version: 1.13
+
+commands:
+  nekoadvertisement:
+    description: NekoAdvertisement
+    usage: /<command>
+    aliases: [nekoad]
+    permission: nekoadvertisement
+    permission-message: You don't have <permission>
