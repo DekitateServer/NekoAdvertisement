@@ -1,0 +1,6 @@
+# NekoAdvertisement config.yml
+
+database:
+  url: "jdbc:mariadb://localhost:3306/"
+  username: "username"
+  password: "password"
