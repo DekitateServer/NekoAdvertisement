@@ -59,7 +59,7 @@ class AdvertisementDao(
     fun getAdvertisement(owner: UUID): Advertisement? {
         try {
             database.connection.use {
-                return it.prepareStatement("SELECT * FROM $TABLE_NAME WHERE owner = ? AND is_delete IS FALSE AND expire_date > NOW() LIMIT 1").use { st ->
+                return it.prepareStatement("SELECT * FROM $TABLE_NAME WHERE owner = ? AND is_delete IS FALSE AND expired_date > NOW() LIMIT 1").use { st ->
                     st.setString(1, owner.toString())
 
                     val result = st.executeQuery()

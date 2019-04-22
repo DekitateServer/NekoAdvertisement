@@ -31,6 +31,7 @@ class AdvertisementCommand(plugin: NekoAdvertisementPlugin) : BaseCommand("adver
             "set" -> sender.doIfPlayerAndArguments(args, 2) { player ->
                 controller.addAdSetConfirmTask(player, args[1], args.drop(2))
             }
+            "unset" -> sender.doIfPlayer { controller.addAdUnSetConfirmTask(it) }
             "confirm" -> sender.doIfPlayer { controller.confirm(it) }
             "cancel" -> sender.doIfPlayer { controller.cancel(it) }
         }

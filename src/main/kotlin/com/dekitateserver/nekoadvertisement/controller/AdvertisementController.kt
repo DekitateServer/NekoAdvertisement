@@ -2,6 +2,9 @@ package com.dekitateserver.nekoadvertisement.controller
 
 import com.dekitateserver.nekoadvertisement.NekoAdvertisementPlugin
 import com.dekitateserver.nekoadvertisement.data.AdvertisementRepository
+import com.dekitateserver.nekoadvertisement.data.model.Advertisement
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
@@ -57,22 +60,26 @@ class AdvertisementController(
         player.sendMessage("§7| §r内容： $content")
         player.sendMessage("§7| §r日数： ${days}日")
         player.sendMessage("§7| §r料金： §c${plugin.economy.format(cost)}")
-
-        val alertText = TextComponent("§7| ")
-
-        TextComponent("§b[登録する]").apply {
-            clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ad confirm")
-            alertText.addExtra(this)
-        }
-        TextComponent(" §c[キャンセル]").apply {
-            clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ad cancel")
-            alertText.addExtra(this)
-        }
-
-        player.spigot().sendMessage(alertText)
+        player.spigot().sendMessage(buildAlertTextLine("登録する"))
 
         confirmTaskMap[player] = SetTask(player, content, days, cost)
         scheduleConfirmTaskReset(player)
+    }
+
+    fun addAdUnSetConfirmTask(player: Player) {
+        GlobalScope.launch {
+            val ad = repository.getAdvertisement(player) ?: let {
+                player.sendWarnMessage("広告が登録されていません.")
+                return@launch
+            }
+
+            player.sendMessage("§d█████ 広告消去確認 █████")
+            player.sendMessage("§7| §r内容： ${ad.content}")
+            player.spigot().sendMessage(buildAlertTextLine("消去する"))
+
+            confirmTaskMap[player] = UnSetTask(player, ad)
+            scheduleConfirmTaskReset(player)
+        }
     }
 
     fun confirm(player: Player) {
@@ -88,7 +95,18 @@ class AdvertisementController(
         if (confirmTaskMap.remove(player) != null) {
             player.sendSuccessMessage("登録をキャンセルしました.")
         } else {
-            player.sendSuccessMessage("キャンセルが必要な処理はありません.")
+            player.sendWarnMessage("キャンセルが必要な処理はありません.")
+        }
+    }
+
+    private fun buildAlertTextLine(okText: String) = TextComponent("§7| ").apply {
+        TextComponent("§b[$okText]").also {
+            it.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ad confirm")
+            addExtra(it)
+        }
+        TextComponent(" §c[キャンセル]").also {
+            it.clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ad cancel")
+            addExtra(it)
         }
     }
 
@@ -108,6 +126,12 @@ class AdvertisementController(
         private val cost: BigDecimal
     ) : ConfirmTask {
         override fun run() {
+            if (repository.hasAdvertisement(player)) {
+                player.sendWarnMessage("すでに広告が登録されています.")
+                player.sendWarnMessage("/ad unset で以前の広告を消去して下さい.")
+                return
+            }
+
             if (plugin.economy.withdraw(player.uniqueId, cost) == null) {
                 player.sendWarnMessage("所持金が不足しています.")
                 return
@@ -119,14 +143,21 @@ class AdvertisementController(
                 player.sendSuccessMessage("登録しました.")
             } else {
                 plugin.economy.deposit(player.uniqueId, cost)
-                player.sendErrorMessage("更新に失敗しました.")
+                player.sendErrorMessage("登録に失敗しました.")
             }
         }
     }
 
-    private inner class UnSetTask : ConfirmTask {
+    private inner class UnSetTask(
+        private val player: Player,
+        private val ad: Advertisement
+    ) : ConfirmTask {
         override fun run() {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            if (repository.deleteAdvertisement(ad)) {
+                player.sendSuccessMessage("消去しました.")
+            } else {
+                player.sendErrorMessage("消去に失敗しました.")
+            }
         }
     }
 
