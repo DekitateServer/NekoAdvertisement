@@ -12,26 +12,30 @@ class AdvertisementCommand(plugin: NekoAdvertisementPlugin) : BaseCommand("adver
         val ARGUMENT_LIST = listOf(
             CommandArgument("set"),
             CommandArgument("unset"),
-            CommandArgument("confirm"),
-            CommandArgument("preview"),
             CommandArgument("info"),
             CommandArgument("list"),
             CommandArgument("freq", "[freq]"),
-            CommandArgument("help"),
-            CommandArgument("sync", permission = "")
+            CommandArgument("help")
         )
     }
 
+    private val controller = plugin.adController
+
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<String>): Boolean {
-        if (args.isEmpty() || args[0] == "help") {
+        if (args.isHelpCommand()) {
             sender.sendHelp()
+            return true
         }
 
         when (args[0]) {
-
+            "set" -> sender.doIfPlayerAndArguments(args, 2) { player ->
+                controller.addAdSetConfirmTask(player, args[1], args.drop(2))
+            }
+            "confirm" -> sender.doIfPlayer { controller.confirm(it) }
+            "cancel" -> sender.doIfPlayer { controller.cancel(it) }
         }
 
-        return false
+        return true
     }
 
     override fun onTabComplete(sender: CommandSender, command: Command, alias: String, args: Array<String>): List<String> {
@@ -52,7 +56,6 @@ class AdvertisementCommand(plugin: NekoAdvertisementPlugin) : BaseCommand("adver
         sendMessage("---------- 広告コマンドヘルプ ----------")
         sendMessage("| §d/ad set <日数> <内容> §r広告を登録")
         sendMessage("| §d/ad unset §r広告を消去")
-        sendMessage("| §d/ad preview <内容> §r広告をプレビュー")
         sendMessage("| §d/ad info §r広告を確認")
         sendMessage("| §d/ad list §r全プレイヤーの広告を確認")
         sendMessage("| §d/ad freq <off|low|middle|high> §r広告の受信頻度を変更")
