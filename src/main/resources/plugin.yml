@@ -14,3 +14,9 @@ commands:
     aliases: [nekoad]
     permission: nekoadvertisement
     permission-message: You don't have <permission>
+  advertisement:
+    description: 広告設定
+    usage: /<command> help
+    aliases: [ad]
+    permission: nekoadvertisement.ad
+    permission-message: You don't have <permission>
