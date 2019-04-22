@@ -5,7 +5,7 @@ author: ken_kentan
 website: https://www.dekitateserver.com
 depend: [NekoLib, NekoEconomy]
 
-api-version: 1.13
+api-version: '1.13'
 
 commands:
   nekoadvertisement:
