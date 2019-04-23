@@ -56,6 +56,40 @@ class AccountDao(
         return false
     }
 
+    fun get(id: UUID): Account? {
+        try {
+            database.connection.use {
+                return it.prepareStatement("SELECT * FROM $TABLE_NAME WHERE id = ?").use { st ->
+                    st.setString(1, id.toString())
+
+                    val result = st.executeQuery()
+                    if (result.next()) result.toAccount() else null
+                }
+            }
+        } catch (e: SQLException) {
+            logger.error("Failed to get.", e)
+        }
+
+        return null
+    }
+
+    fun getAdvertiseFrequency(id: UUID): AdvertiseFrequency? {
+        try {
+            database.connection.use {
+                return it.prepareStatement("SELECT frequency FROM $TABLE_NAME WHERE id = ?").use { st ->
+                    st.setString(1, id.toString())
+
+                    val result = st.executeQuery()
+                    if (result.next()) AdvertiseFrequency.valueOf(result.getString(1)) else null
+                }
+            }
+        } catch (e: SQLException) {
+            logger.error("Failed to get frequency.", e)
+        }
+
+        return null
+    }
+
     private fun ResultSet.toAccount() = Account(
         UUID.fromString(getString(1)),
         AdvertiseFrequency.valueOf(getString(2))

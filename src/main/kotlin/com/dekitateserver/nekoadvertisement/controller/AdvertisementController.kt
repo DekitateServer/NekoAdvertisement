@@ -165,7 +165,7 @@ class AdvertisementController(
     }
 
     private fun updatePlayerMap(player: Player) {
-        playerMap[player] = accountRepository.getAdvertiseFrequency(player) ?: AdvertiseFrequency.MIDDLE
+        playerMap[player] = accountRepository.getAdvertiseFrequency(player)
     }
 
     private fun buildAlertTextLine(okText: String) = TextComponent(" ").apply {
