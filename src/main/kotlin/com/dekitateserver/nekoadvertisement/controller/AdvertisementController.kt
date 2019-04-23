@@ -158,7 +158,7 @@ class AdvertisementController(
 
     fun cancel(player: Player) {
         if (confirmTaskMap.remove(player) != null) {
-            player.sendSuccessMessage("登録をキャンセルしました.")
+            player.sendSuccessMessage("キャンセルしました.")
         } else {
             player.sendWarnMessage("キャンセルが必要な処理はありません.")
         }
