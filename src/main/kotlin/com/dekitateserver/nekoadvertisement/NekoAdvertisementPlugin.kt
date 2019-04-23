@@ -4,6 +4,7 @@ import com.dekitateserver.nekoadvertisement.command.AdvertisementCommand
 import com.dekitateserver.nekoadvertisement.config.ConfigKeys
 import com.dekitateserver.nekoadvertisement.config.PluginConfiguration
 import com.dekitateserver.nekoadvertisement.controller.AdvertisementController
+import com.dekitateserver.nekoadvertisement.listener.BukkitEventListener
 import com.dekitateserver.nekoeconomy.api.Economy
 import com.dekitateserver.nekolib.config.Configuration
 import com.dekitateserver.nekolib.data.dao.Database
@@ -18,6 +19,8 @@ class NekoAdvertisementPlugin : JavaPlugin(), NekoAdvertisement {
     lateinit var economy: Economy
     lateinit var configuration: Configuration
     lateinit var database: Database
+
+    lateinit var bukkitEventListener: BukkitEventListener
 
     lateinit var adController: AdvertisementController
 
@@ -37,14 +40,20 @@ class NekoAdvertisementPlugin : JavaPlugin(), NekoAdvertisement {
             configuration.get(ConfigKeys.DATABASE_PASSWORD)
         )
 
+        bukkitEventListener = BukkitEventListener()
+
         adController = AdvertisementController(this)
 
         setCommand(AdvertisementCommand(this))
+
+        server.pluginManager.registerEvents(bukkitEventListener, this)
 
         logger.info("Enabled")
     }
 
     override fun onDisable() {
+        server.scheduler.cancelTasks(this)
+        adController.cancelJob()
         database.close()
 
         logger.info("Disabled")
