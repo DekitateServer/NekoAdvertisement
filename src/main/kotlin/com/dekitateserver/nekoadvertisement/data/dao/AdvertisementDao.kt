@@ -42,7 +42,7 @@ class AdvertisementDao(
 
         try {
             database.connection.use {
-                it.prepareStatement("SELECT * FROM $TABLE_NAME WHERE is_delete IS FALSE AND expire_date > NOW() ORDER BY id").use { st ->
+                it.prepareStatement("SELECT * FROM $TABLE_NAME WHERE is_delete IS FALSE AND expired_date > NOW() ORDER BY id").use { st ->
                     val result = st.executeQuery()
                     while (result.next()) {
                         adList.add(result.toAdvertisement())
