@@ -4,3 +4,6 @@ database:
   url: "jdbc:mariadb://localhost:3306/"
   username: "username"
   password: "password"
+
+cache:
+  sync-interval-minutes: 30

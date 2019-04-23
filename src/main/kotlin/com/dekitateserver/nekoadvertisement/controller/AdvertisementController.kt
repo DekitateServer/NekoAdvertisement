@@ -1,10 +1,12 @@
 package com.dekitateserver.nekoadvertisement.controller
 
 import com.dekitateserver.nekoadvertisement.NekoAdvertisementPlugin
+import com.dekitateserver.nekoadvertisement.config.ConfigKeys
 import com.dekitateserver.nekoadvertisement.data.AccountRepository
 import com.dekitateserver.nekoadvertisement.data.AdvertisementRepository
 import com.dekitateserver.nekoadvertisement.data.model.AdvertiseFrequency
 import com.dekitateserver.nekoadvertisement.data.model.Advertisement
+import com.dekitateserver.nekolib.config.Configuration
 import com.dekitateserver.nekolib.util.displayName
 import com.dekitateserver.nekolib.util.sendFooterMessage
 import com.dekitateserver.nekolib.util.sendHeaderMessage
@@ -53,6 +55,7 @@ class AdvertisementController(
     private val playerMap: MutableMap<Player, AdvertiseFrequency> = ConcurrentHashMap()
 
     private val adCacheList: MutableList<Advertisement> = CopyOnWriteArrayList()
+    private var syncAdCacheTaskId: Int? = null
 
     private val controllerJob = SupervisorJob()
     override val coroutineContext: CoroutineContext
@@ -67,6 +70,9 @@ class AdvertisementController(
         }
 
         adCacheList.addAll(adRepository.getAdvertisementList())
+
+        scheduleSyncAdvertisementsCacheTask(plugin.configuration)
+        plugin.configuration.subscribe(this::scheduleSyncAdvertisementsCacheTask)
 
         scheduleBroadcastTask(AdvertiseFrequency.HIGH)
         scheduleBroadcastTask(AdvertiseFrequency.MIDDLE)
@@ -109,7 +115,7 @@ class AdvertisementController(
         player.sendFooterMessage(ChatColor.GOLD)
 
         confirmTaskMap[player] = SetTask(player, content, days, cost)
-        scheduleConfirmTaskReset(player)
+        scheduleConfirmResetTask(player)
     }
 
     fun addAdUnSetConfirmTask(player: Player) {
@@ -127,7 +133,7 @@ class AdvertisementController(
             player.sendFooterMessage(ChatColor.GOLD)
 
             confirmTaskMap[player] = UnSetTask(player, ad)
-            scheduleConfirmTaskReset(player)
+            scheduleConfirmResetTask(player)
         }
     }
 
@@ -238,7 +244,7 @@ class AdvertisementController(
         }
     }
 
-    fun syncAdvertisementCache() {
+    fun syncAdvertisementsCache() {
         launch {
             with(adCacheList) {
                 clear()
@@ -264,7 +270,17 @@ class AdvertisementController(
         }
     }
 
-    private fun scheduleConfirmTaskReset(player: Player) {
+    private fun scheduleSyncAdvertisementsCacheTask(config: Configuration) {
+        syncAdCacheTaskId?.let(Bukkit.getScheduler()::cancelTask)
+
+        val tick = config.get(ConfigKeys.CACHE_SYNC_INTERVAL_MINUTES) * 60 * 20L
+        if (tick > 0) {
+            val task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, Runnable(this::syncAdvertisementsCache), tick, tick)
+            syncAdCacheTaskId = task.taskId
+        }
+    }
+
+    private fun scheduleConfirmResetTask(player: Player) {
         Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, Runnable {
             confirmTaskMap.remove(player)
         }, CONFIRM_RESET_TICK)
@@ -330,7 +346,7 @@ class AdvertisementController(
             val expiredDate = Date(System.currentTimeMillis() + (days.dayToMills()))
 
             if (adRepository.addAdvertisement(player, content, expiredDate)) {
-                syncAdvertisementCache()
+                syncAdvertisementsCache()
                 player.sendSuccessMessage("登録しました.")
             } else {
                 plugin.economy.deposit(player.uniqueId, cost)
@@ -345,7 +361,7 @@ class AdvertisementController(
     ) : ConfirmTask {
         override fun run() {
             if (adRepository.deleteAdvertisement(ad)) {
-                syncAdvertisementCache()
+                syncAdvertisementsCache()
                 player.sendSuccessMessage("消去しました.")
             } else {
                 player.sendErrorMessage("消去に失敗しました.")

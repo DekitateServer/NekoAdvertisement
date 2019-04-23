@@ -10,13 +10,13 @@ api-version: '1.13'
 commands:
   nekoadvertisement:
     description: NekoAdvertisement
-    usage: /<command>
+    usage: /<command> [sync|reload]
     aliases: [nekoad]
     permission: nekoadvertisement
-    permission-message: You don't have <permission>
+    permission-message: §cこのコマンドを実行する権限がありません.
   advertisement:
     description: 広告設定
     usage: /<command> help
     aliases: [ad]
     permission: nekoadvertisement.ad
-    permission-message: You don't have <permission>
+    permission-message: §cこのコマンドを実行する権限がありません.

@@ -20,7 +20,7 @@ class AdvertisementCommand(plugin: NekoAdvertisementPlugin) : BaseCommand("adver
         )
     }
 
-    private val controller = plugin.adController
+    private val controller = plugin.advertisementController
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<String>): Boolean {
         if (args.isHelpCommand()) {
