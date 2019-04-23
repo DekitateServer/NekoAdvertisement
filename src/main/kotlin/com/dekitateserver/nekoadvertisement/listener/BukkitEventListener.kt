@@ -21,7 +21,7 @@ class BukkitEventListener : Listener {
         playerJoinEventHandler = handler
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerPreLogin(event: AsyncPlayerPreLoginEvent) {
         playerPreLoginEventHandler?.invoke(event.uniqueId)
     }
