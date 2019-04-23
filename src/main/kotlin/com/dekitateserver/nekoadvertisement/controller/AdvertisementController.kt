@@ -204,15 +204,13 @@ class AdvertisementController(
                 return
             }
 
-            if (size < index) {
+            if (size <= index) {
                 index = 0
             }
 
-            val content = get(index).formattedContent
+            val content = get(index++).formattedContent
             playerMap.filterValues { it == frequency }
                 .forEach { (player, _) -> player.sendMessage(content) }
-
-            index++
         }
 
     }
@@ -270,5 +268,4 @@ class AdvertisementController(
 
     fun Int.dayToMills(): Long = this * 86400000L
 
-    fun Long.millsToDay(): Double = this / 86400000.0
 }
