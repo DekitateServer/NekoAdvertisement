@@ -205,7 +205,7 @@ class AdvertisementController(
 
     fun updateAdvertiseFrequency(player: Player, strFrequency: String) {
         val frequency = try {
-            AdvertiseFrequency.valueOf(strFrequency)
+            AdvertiseFrequency.valueOf(strFrequency.toUpperCase())
         } catch (e: IllegalArgumentException) {
             player.sendWarnMessage("正しい広告頻度を入力して下さい.")
             return
