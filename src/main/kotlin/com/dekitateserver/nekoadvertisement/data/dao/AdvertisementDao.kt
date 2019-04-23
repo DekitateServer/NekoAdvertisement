@@ -37,7 +37,7 @@ class AdvertisementDao(
         }
     }
 
-    fun getAdvertisementList(): List<Advertisement> {
+    fun getList(): List<Advertisement> {
         val adList = mutableListOf<Advertisement>()
 
         try {
@@ -56,7 +56,7 @@ class AdvertisementDao(
         return adList
     }
 
-    fun getAdvertisement(owner: UUID): Advertisement? {
+    fun get(owner: UUID): Advertisement? {
         try {
             database.connection.use {
                 return it.prepareStatement("SELECT * FROM $TABLE_NAME WHERE owner = ? AND is_delete IS FALSE AND expired_date > NOW() LIMIT 1").use { st ->
@@ -73,7 +73,7 @@ class AdvertisementDao(
         return null
     }
 
-    fun insertAdvertisement(owner: UUID, content: String, expiredDate: Date): Boolean {
+    fun insert(owner: UUID, content: String, expiredDate: Date): Boolean {
         try {
             database.connection.use {
                 val count = it.prepareStatement("INSERT INTO $TABLE_NAME (owner, content, expired_date, is_delete) VALUES (?, ?, ?, FALSE)").use { st ->
@@ -93,7 +93,7 @@ class AdvertisementDao(
         return false
     }
 
-    fun updateAdvertisement(ad: Advertisement): Boolean {
+    fun update(ad: Advertisement): Boolean {
         try {
             database.connection.use {
                 val count = it.prepareStatement("UPDATE $TABLE_NAME SET owner = ?, content = ?, expired_date = ?, is_delete = ? WHERE id = ?").use { st ->
