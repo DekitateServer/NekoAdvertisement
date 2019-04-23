@@ -16,9 +16,9 @@ class AdvertisementDao(
 ) : BaseDao() {
 
     private companion object {
-        const val TABLE_NAME = "advertisement"
+        const val TABLE_NAME = "neko_advertisements"
         const val CREATE_TABLE_SQL =
-            "CREATE TABLE IF NOT EXISTS advertisement (id INT NOT NULL AUTO_INCREMENT, owner VARCHAR(36) NOT NULL, content TEXT NOT NULL, expired_date DATETIME NOT NULL, is_delete BOOLEAN NOT NULL, PRIMARY KEY (id))"
+            "CREATE TABLE IF NOT EXISTS $TABLE_NAME (id INT NOT NULL AUTO_INCREMENT, owner VARCHAR(36) NOT NULL, content TEXT NOT NULL, expired_date DATETIME NOT NULL, is_delete BOOLEAN NOT NULL, PRIMARY KEY (id))"
     }
 
     init {
