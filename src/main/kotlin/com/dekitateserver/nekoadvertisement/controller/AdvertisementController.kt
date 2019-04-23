@@ -5,6 +5,7 @@ import com.dekitateserver.nekoadvertisement.data.AccountRepository
 import com.dekitateserver.nekoadvertisement.data.AdvertisementRepository
 import com.dekitateserver.nekoadvertisement.data.model.AdvertiseFrequency
 import com.dekitateserver.nekoadvertisement.data.model.Advertisement
+import com.dekitateserver.nekolib.util.displayName
 import com.dekitateserver.nekolib.util.sendFooterMessage
 import com.dekitateserver.nekolib.util.sendHeaderMessage
 import kotlinx.coroutines.CoroutineScope
@@ -17,6 +18,7 @@ import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
@@ -24,6 +26,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.max
 
 class AdvertisementController(
     private val plugin: NekoAdvertisementPlugin
@@ -36,6 +39,8 @@ class AdvertisementController(
         const val MAX_CONTENT_LENGTH = 250
 
         const val CONFIRM_RESET_TICK = 20L * 30
+
+        const val PAGE_SIZE = 5
 
         const val PREFIX = "§7[§d広告設定§7]§r "
 
@@ -147,6 +152,75 @@ class AdvertisementController(
         }
     }
 
+    fun sendList(sender: CommandSender, strPage: String?) {
+        val page = max(strPage?.toIntOrNull() ?: 1, 1)
+
+        launch {
+            val adList = adRepository.getAdvertisementList()
+            val pagedAdList = adList.chunked(PAGE_SIZE)
+                .elementAtOrNull(page - 1)
+
+            if (pagedAdList.isNullOrEmpty()) {
+                sender.sendWarnMessage("${page}ページは存在しません.")
+                return@launch
+            }
+
+            val sumPage = (adList.size + PAGE_SIZE - 1) / PAGE_SIZE
+
+            sender.sendMessage("§d -------------- 広告一覧（$page/${sumPage}） -------------- ")
+
+            val indexOffset = (page - 1) * PAGE_SIZE + 1
+            pagedAdList.forEachIndexed { index, ad ->
+                sender.sendMessage("${index + indexOffset}. ${ad.content} §7(${Bukkit.getOfflinePlayer(ad.owner).displayName})")
+            }
+
+            val footer = TextComponent("§d ------------ ")
+            TextComponent("≪前ページ ").run {
+                if (page > 1) {
+                    color = net.md_5.bungee.api.ChatColor.AQUA
+                    clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ad list ${page - 1}")
+                } else {
+                    color = net.md_5.bungee.api.ChatColor.GRAY
+                }
+
+                footer.addExtra(this)
+            }
+            footer.addExtra("§d|")
+
+            TextComponent(" 次ページ≫").apply {
+                if (page < sumPage) {
+                    color = net.md_5.bungee.api.ChatColor.AQUA
+                    clickEvent = ClickEvent(ClickEvent.Action.RUN_COMMAND, "/ad list ${page + 1}")
+                } else {
+                    color = net.md_5.bungee.api.ChatColor.GRAY
+                }
+
+                footer.addExtra(this)
+            }
+            footer.addExtra("§d ------------ ")
+
+            sender.spigot().sendMessage(footer)
+        }
+    }
+
+    fun updateAdvertiseFrequency(player: Player, strFrequency: String) {
+        val frequency = try {
+            AdvertiseFrequency.valueOf(strFrequency)
+        } catch (e: IllegalArgumentException) {
+            player.sendWarnMessage("正しい広告頻度を入力して下さい.")
+            return
+        }
+
+        launch {
+            if (accountRepository.updateAdvertiseFrequency(player, frequency)) {
+                playerMap[player] = frequency
+                player.sendSuccessMessage("受信頻度を ${frequency.displayName} §aに設定しました.")
+            } else {
+                player.sendErrorMessage("データの更新に失敗しました.")
+            }
+        }
+    }
+
     fun confirm(player: Player) {
         val task = confirmTaskMap.remove(player) ?: let {
             player.sendWarnMessage("認証が必要な処理はありません.")
@@ -161,6 +235,15 @@ class AdvertisementController(
             player.sendSuccessMessage("キャンセルしました.")
         } else {
             player.sendWarnMessage("キャンセルが必要な処理はありません.")
+        }
+    }
+
+    fun syncAdvertisementCache() {
+        launch {
+            with(adCacheList) {
+                clear()
+                addAll(adRepository.getAdvertisementList())
+            }
         }
     }
 
@@ -190,6 +273,14 @@ class AdvertisementController(
     private fun scheduleBroadcastTask(freq: AdvertiseFrequency) {
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, BroadcastRunnable(freq), 0L, freq.intervalTick)
     }
+
+    private fun CommandSender.sendSuccessMessage(message: String) = sendMessage("${PREFIX}§a$message")
+
+    private fun CommandSender.sendWarnMessage(message: String) = sendMessage("${PREFIX}§e$message")
+
+    private fun CommandSender.sendErrorMessage(message: String) = sendMessage("${PREFIX}§c$message")
+
+    private fun Int.dayToMills(): Long = this * 86400000L
 
 
     private inner class BroadcastRunnable(
@@ -239,6 +330,7 @@ class AdvertisementController(
             val expiredDate = Date(System.currentTimeMillis() + (days.dayToMills()))
 
             if (adRepository.addAdvertisement(player, content, expiredDate)) {
+                syncAdvertisementCache()
                 player.sendSuccessMessage("登録しました.")
             } else {
                 plugin.economy.deposit(player.uniqueId, cost)
@@ -253,19 +345,12 @@ class AdvertisementController(
     ) : ConfirmTask {
         override fun run() {
             if (adRepository.deleteAdvertisement(ad)) {
+                syncAdvertisementCache()
                 player.sendSuccessMessage("消去しました.")
             } else {
                 player.sendErrorMessage("消去に失敗しました.")
             }
         }
     }
-
-    private fun Player.sendSuccessMessage(message: String) = sendMessage("${PREFIX}§a$message")
-
-    private fun Player.sendWarnMessage(message: String) = sendMessage("${PREFIX}§e$message")
-
-    private fun Player.sendErrorMessage(message: String) = sendMessage("${PREFIX}§c$message")
-
-    fun Int.dayToMills(): Long = this * 86400000L
 
 }

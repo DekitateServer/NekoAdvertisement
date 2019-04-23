@@ -20,4 +20,7 @@ class AccountRepository(plugin: NekoAdvertisementPlugin) {
     fun getAdvertiseFrequency(player: Player): AdvertiseFrequency =
             dao.getAdvertiseFrequency(player.uniqueId) ?: AdvertiseFrequency.MIDDLE
 
+    fun updateAdvertiseFrequency(player: Player, frequency: AdvertiseFrequency): Boolean =
+            dao.updateAdvertiseFrequency(player.uniqueId, frequency)
+
 }

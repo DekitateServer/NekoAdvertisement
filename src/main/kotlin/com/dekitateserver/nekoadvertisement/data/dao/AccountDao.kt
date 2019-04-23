@@ -90,6 +90,23 @@ class AccountDao(
         return null
     }
 
+    fun updateAdvertiseFrequency(id: UUID, frequency: AdvertiseFrequency): Boolean {
+        try {
+            database.connection.use {
+                return it.prepareStatement("UPDATE $TABLE_NAME SET frequency = ? WHERE id = ?").use { st ->
+                    st.setString(1, frequency.name)
+                    st.setString(2, id.toString())
+
+                    st.executeUpdate() > 0
+                }
+            }
+        } catch (e: SQLException) {
+            logger.error("Failed to update frequency.", e)
+        }
+
+        return false
+    }
+
     private fun ResultSet.toAccount() = Account(
         UUID.fromString(getString(1)),
         AdvertiseFrequency.valueOf(getString(2))

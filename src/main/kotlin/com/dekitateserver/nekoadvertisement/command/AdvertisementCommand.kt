@@ -1,6 +1,7 @@
 package com.dekitateserver.nekoadvertisement.command
 
 import com.dekitateserver.nekoadvertisement.NekoAdvertisementPlugin
+import com.dekitateserver.nekoadvertisement.data.model.AdvertiseFrequency
 import com.dekitateserver.nekolib.command.BaseCommand
 import com.dekitateserver.nekolib.command.CommandArgument
 import org.bukkit.command.Command
@@ -33,6 +34,8 @@ class AdvertisementCommand(plugin: NekoAdvertisementPlugin) : BaseCommand("adver
             }
             "unset" -> sender.doIfPlayer { controller.addAdUnSetConfirmTask(it) }
             "info" -> sender.doIfPlayer { controller.sendInfo(it) }
+            "list" -> controller.sendList(sender, args.getOrNull(1))
+            "freq" -> sender.doIfPlayerAndArguments(args, 1) { controller.updateAdvertiseFrequency(it, args[1]) }
             "confirm" -> sender.doIfPlayer { controller.confirm(it) }
             "cancel" -> sender.doIfPlayer { controller.cancel(it) }
         }
@@ -49,7 +52,9 @@ class AdvertisementCommand(plugin: NekoAdvertisementPlugin) : BaseCommand("adver
         val prefix = args.last()
 
         return when (commandArg.get(args)) {
-            "[freq]" -> getPlayerNameList(prefix)
+            "[freq]" -> AdvertiseFrequency.values()
+                .filter { it.name.startsWith(prefix, ignoreCase = true) }
+                .map { it.name.toLowerCase() }
             else -> emptyList()
         }
     }
