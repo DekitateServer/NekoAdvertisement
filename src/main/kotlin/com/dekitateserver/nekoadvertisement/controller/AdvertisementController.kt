@@ -7,12 +7,10 @@ import com.dekitateserver.nekoadvertisement.data.AdvertisementRepository
 import com.dekitateserver.nekoadvertisement.data.model.AdvertiseFrequency
 import com.dekitateserver.nekoadvertisement.data.model.Advertisement
 import com.dekitateserver.nekolib.config.Configuration
+import com.dekitateserver.nekolib.controller.BaseController
 import com.dekitateserver.nekolib.util.displayName
 import com.dekitateserver.nekolib.util.sendFooterMessage
 import com.dekitateserver.nekolib.util.sendHeaderMessage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
@@ -27,12 +25,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
 class AdvertisementController(
     private val plugin: NekoAdvertisementPlugin
-) : CoroutineScope {
+) : BaseController() {
 
     private companion object {
         const val COST_PER_DAY = 100.0
@@ -57,10 +54,6 @@ class AdvertisementController(
     private val adCacheList: MutableList<Advertisement> = CopyOnWriteArrayList()
     private var syncAdCacheTaskId: Int? = null
 
-    private val controllerJob = SupervisorJob()
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default + controllerJob
-
     init {
         plugin.bukkitEventListener.subscribePlayerPreLoginEvent(accountRepository::createAccountIfNeeded)
 
@@ -78,8 +71,6 @@ class AdvertisementController(
         scheduleBroadcastTask(AdvertiseFrequency.MIDDLE)
         scheduleBroadcastTask(AdvertiseFrequency.LOW)
     }
-
-    fun cancelJob() = controllerJob.cancel()
 
     fun addAdSetConfirmTask(player: Player, strDays: String, contents: List<String>) {
         val days = strDays.toIntOrNull() ?: let {
